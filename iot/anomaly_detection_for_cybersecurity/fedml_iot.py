@@ -13,10 +13,16 @@ if __name__ == "__main__":
     device = fedml.device.get_device(args)
 
     # load data
-    dataset, output_dim = load_data(args)
+    # dataset, output_dim = load_data(args, 'mnist')
+
+    # load data
+    dataset, output_dim = fedml.data.load(args)
 
     # load model
-    model = AutoEncoder(output_dim)
+    # model = AutoEncoder(output_dim)
+
+    # load model
+    model = fedml.model.create(args, output_dim)
 
     # create trainer
     trainer = FedDetectTrainer(model, args)

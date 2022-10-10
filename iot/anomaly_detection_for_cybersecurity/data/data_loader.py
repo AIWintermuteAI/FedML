@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import torch
 
+from fedml.data.MNIST.data_loader import download_mnist, load_partition_data_mnist
+from fedml.data.cifar10.data_loader import load_partition_data_cifar10
 
 def download_data(args, device_name):
     url_root = "https://fediot.s3.us-west-1.amazonaws.com/fediot"
@@ -17,6 +19,69 @@ def download_data(args, device_name):
         f.extractall(args.data_cache_dir)
 
 
+def load_data(args, dataset_name):
+
+    logging.info("loading dataset_name = %s to %s" % (args.dataset, args.data_cache_dir))
+
+    if dataset_name == "mnist":
+        download_mnist(args.data_cache_dir)
+        (
+            client_num,
+            train_data_num,
+            test_data_num,
+            train_data_global,
+            test_data_global,
+            train_data_local_num_dict,
+            train_data_local_dict,
+            test_data_local_dict,
+            class_num,
+        ) = load_partition_data_mnist(
+            args,
+            args.batch_size,
+            train_path=args.data_cache_dir + "/MNIST/train",
+            test_path=args.data_cache_dir + "/MNIST/test",
+        )
+        """
+        For shallow NN or linear models,
+        we uniformly sample a fraction of clients each round (as the original FedAvg paper)
+        """
+        args.client_num_in_total = client_num
+
+        if dataset_name == "cifar10":
+            data_loader = load_partition_data_cifar10
+        else:
+            data_loader = load_partition_data_cifar10
+
+        (
+            train_data_num,
+            test_data_num,
+            train_data_global,
+            test_data_global,
+            train_data_local_num_dict,
+            train_data_local_dict,
+            test_data_local_dict,
+            class_num,
+        ) = data_loader(
+            args.dataset,
+            args.data_dir,
+            args.partition_method,
+            args.partition_alpha,
+            args.client_num_in_total,
+            args.batch_size,
+        )
+    dataset = [
+        train_data_num,
+        test_data_num,
+        train_data_global,
+        test_data_global,
+        train_data_local_num_dict,
+        train_data_local_dict,
+        test_data_local_dict,
+        class_num,
+    ]
+    return dataset, class_num
+
+"""
 def load_data(args):
     device_list = [
         "Danmini_Doorbell",
@@ -51,10 +116,10 @@ def load_data(args):
             if not os.path.exists(device_data_cache_dir):
                 os.makedirs(device_data_cache_dir)
                 logging.info(
-                    "Downloading dataset for device {} on server".format(i + 1)
+                    "Downloading dataset for device {} {} on server".format(i + 1, device_name)
                 )
                 download_data(args, device_name)
-            
+
             logging.info("Creating dataset {}".format(device_name))
             benign_data = pd.read_csv(
                 os.path.join(args.data_cache_dir, device_name, "benign_traffic.csv")
@@ -138,3 +203,4 @@ def load_data(args):
         class_num,
     ]
     return dataset, class_num
+"""
