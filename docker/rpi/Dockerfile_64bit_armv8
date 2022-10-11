@@ -1,9 +1,9 @@
 FROM balenalib/raspberrypi4-64-python:3.7.13
 # https://eide.ai/rpi4/pytorch/2020/06/30/pytorch-raspberry.html
 
-WORKDIR /usr/src/fedml
+WORKDIR /home
 RUN sudo apt-get update
-RUN apt-get install -y git gcc python3-dev v4l-utils python3-opencv python3-pip python3-setuptools libffi-dev libssl-dev wget
+RUN apt-get install -y git gcc python3-dev v4l-utils python3-pip python3-setuptools libffi-dev libssl-dev wget
 
 RUN sudo apt-get install -y python3-numpy python3-wheel python3-setuptools python3-future python3-yaml python3-six python3-requests python3-pip python3-pillow
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
@@ -19,10 +19,12 @@ RUN pip install numpy --upgrade
 # https://stackoverflow.com/questions/25340698/importerror-cannot-import-name-imaging
 RUN pip install -U Pillow
 
+RUN pip install opencv-python-headless
+
 # https://discuss.pytorch.org/t/failed-to-load-image-python-extension-could-not-find-module/140278/13
 RUN pip install --upgrade torchvision==0.10.0
 
-RUN git clone --depth 1 https://github.com/FedML-AI/FedML.git && \
-    cd FedML && git checkout 7aaa278d15f8852e1e2af49bf8baf3666151192f && \
+RUN git clone --depth 1 https://github.com/AIWintermuteAI/FedML --branch thesis_work --single-branch && \
+    cd FedML && git checkout 8c934bcc5f9a35ed4def4aed6df9d823185b5d36 && \
     bash iot/anomaly_detection_for_cybersecurity/config/bootstrap.sh && \
     cd python && pip install -e ./

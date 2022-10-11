@@ -1,0 +1,81 @@
+FROM ubuntu:focal
+
+ENV OS=ubuntu20.04
+ENV DISTRO=ubuntu2004
+ENV ARCH=x86_64
+ENV PYTHON_VERSION=3
+ENV PYTORCH_VERSION=1.11.0
+ENV OPENMPI_BASEVERSION=4.1
+ENV OPENMPI_VERSION=4.1.2
+
+# ***************************************************************************
+# Version and directory Settings
+# ***************************************************************************
+ENV INSTALL_DIR=/tmp
+#ENV WORKSPACE=/home/fedml
+RUN mkdir -p ${INSTALL_DIR}
+#RUN mkdir -p ${WORKSPACE}
+
+# ***************************************************************************
+# Python
+# ***************************************************************************
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get clean
+RUN apt-get --allow-downgrades update
+RUN apt-get install -y python3 python3-pip
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -nsf /usr/bin/pip3 /usr/bin/pip
+
+# ***************************************************************************
+# Utilities
+# ***************************************************************************
+RUN apt-get install -y --no-install-recommends \
+        software-properties-common build-essential autotools-dev \
+        nfs-common pdsh \
+        cmake g++ gcc \
+        curl wget less unzip \
+        htop iftop iotop ca-certificates openssh-client openssh-server \
+        rsync iputils-ping net-tools sudo \
+        llvm-9-dev git
+
+# ***************************************************************************
+# PyTorch
+# ***************************************************************************
+
+RUN pip3 install torch==1.11.0 torchvision==0.10.0
+
+RUN python3 -c "import torch; torch.__version__"
+
+# ***************************************************************************
+# install torch-geometric (https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html)
+# ***************************************************************************
+RUN cd ${INSTALL_DIR} && \
+git clone https://github.com/pyg-team/pytorch_geometric.git && \
+cd pytorch_geometric && \
+git submodule sync && \
+git submodule update --init --recursive --jobs 0 && \
+python3 setup.py install
+RUN rm -rf ${INSTALL_DIR}/pytorch_geometric
+
+# ***************************************************************************
+## install fedml from source
+# ***************************************************************************
+RUN apt-get install -y python3-mpi4py
+RUN pip3 install urllib3==1.26.9
+RUN pip3 install --upgrade requests
+
+WORKDIR /home
+
+RUN git clone --depth 1 https://github.com/AIWintermuteAI/FedML --branch thesis_work --single-branch && \
+    cd FedML && git checkout 8c934bcc5f9a35ed4def4aed6df9d823185b5d36 && \
+    bash iot/anomaly_detection_for_cybersecurity/config/bootstrap.sh && \
+    cd python && pip install -e ./
+
+RUN python3 -c "import fedml; fedml.__version__"
+
+##############################################################################
+# Entry Point Script
+##############################################################################
+#ADD ./x86-64/entry-point.sh /batch-runtime-scripts/entry-point.sh
+#RUN sudo chmod 0755 /batch-runtime-scripts/entry-point.sh
+#CMD /batch-runtime-scripts/entry-point.sh

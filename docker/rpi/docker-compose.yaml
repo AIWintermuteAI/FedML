@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+
+  server:
+    build:
+      context: ./
+      dockerfile: Dockerfile_x86-64
+    #command: /bin/bash
+    command: bash -c "cd /home/code && bash run_server.sh"
+    volumes:
+      - ./data:/home/data
+      - ./code:/home/code
+
+  edge1:
+    build:
+      context: ./
+      dockerfile: Dockerfile_64bit_armv8
+    #command: /bin/bash
+    command: bash -c "cd /home/code && bash run_client.sh 1"
+    volumes:
+      - ./data:/home/data
+      - ./code:/home/code
+    depends_on:
+      - server
+
+  edge2:
+    build:
+      context: ./
+      dockerfile: Dockerfile_64bit_armv8
+    #command: /bin/bash
+    command: bash -c "cd /home/code && bash run_client.sh 2"
+    volumes:
+      - ./data:/home/data
+      - ./code:/home/code
+    depends_on:
+      - server
